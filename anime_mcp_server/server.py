@@ -111,52 +111,65 @@ def show_anime_dashboard(anime_id: str):
     Prefab UI anime intelligence dashboard — including score, episodes,
     and a detailed synopsis.
     """
-    from prefab_ui.components import Card, Text, Container, Badge
+    from prefab_ui.app import PrefabApp
+    from prefab_ui.components import (
+        Card, CardContent, CardHeader,
+        Column, Row, Grid,
+        Heading, H3, Text, Muted, Small, Badge,
+    )
 
     try:
         if not os.path.exists(DB_FILE):
-            with Container(className="p-8"):
-                with Card(title="⚠️ Vault Empty"):
-                    Text("Run the agent first to fetch and store anime data.", className="text-gray-500")
-            return
+            with PrefabApp() as app:
+                with Column(gap=4, css_class="p-8"):
+                    Heading("⚠️ Vault Empty")
+                    Text("Run the agent first to fetch and store anime data.")
+            return app
 
         with open(DB_FILE, "r", encoding="utf-8") as f:
             db = json.load(f)
 
         if anime_id not in db:
-            with Container(className="p-8"):
-                with Card(title=f"⚠️ No data for ID: {anime_id}"):
-                    Text("Run the agent pipeline to fetch this anime first.", className="text-gray-500")
-            return
+            with PrefabApp() as app:
+                with Column(gap=4, css_class="p-8"):
+                    Heading(f"⚠️ No data for ID: {anime_id}")
+                    Text("Run the agent pipeline to fetch this anime first.")
+            return app
 
         p = db[anime_id]
 
         # ── Dashboard Layout ─────────────────────────────────────────────
-        with Container(className="p-8 bg-slate-900 min-h-screen font-sans"):
+        with PrefabApp() as app:
+            with Column(gap=4, css_class="p-6"):
+                Heading(f"🎬 {p.get('title_english', 'Unknown Anime')}")
+                Muted(f"MAL ID: {anime_id}  •  Status: {p.get('status', 'Unknown')}")
 
-            # Hero card
-            with Card(
-                title=f"🎬 {p.get('title_english', 'Unknown Anime')}",
-                description=f"MAL ID: {anime_id}  •  Status: {p.get('status', 'Unknown')}",
-                className="max-w-4xl mx-auto shadow-2xl border-t-4 border-purple-500 bg-slate-800 text-white mb-6"
-            ):
-                # Key metrics row
-                with Container(className="flex gap-4 flex-wrap mt-4 mb-6"):
-                    Badge(f"⭐ Score: {p.get('score', 'N/A')}", className="bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-sm")
-                    Badge(f"📺 Episodes: {p.get('episodes', 'N/A')}", className="bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm")
+                # Key metrics
+                with Row(gap=2):
+                    Badge(f"⭐ Score: {p.get('score', 'N/A')}")
+                    Badge(f"📺 Episodes: {p.get('episodes', 'N/A')}")
 
-                with Container(className="bg-slate-700 p-4 rounded-lg mb-4"):
-                    Text("Synopsis", className="text-xl font-bold text-purple-300 mb-2")
-                    Text(p.get('synopsis', 'No synopsis available.'), className="text-slate-200 text-sm leading-relaxed")
+                # Synopsis card
+                with Card():
+                    with CardHeader():
+                        H3("Synopsis")
+                    with CardContent():
+                        Text(p.get('synopsis', 'No synopsis available.'))
 
-                Text(
-                    f"Fetched: {p.get('fetched_at', 'N/A')[:10]}  |  DB updated: {p.get('db_last_updated', 'N/A')[:10]}",
-                    className="text-xs text-slate-400 italic mt-4 border-t border-slate-600 pt-2"
+                # Metadata
+                Small(
+                    f"Fetched: {p.get('fetched_at', 'N/A')[:10]}  |  "
+                    f"DB updated: {p.get('db_last_updated', 'N/A')[:10]}"
                 )
 
+        return app
+
     except Exception as e:
-        with Card(title="❌ Dashboard Error", className="border-red-500 max-w-4xl mx-auto"):
-            Text(f"Failed to generate dashboard: {str(e)}", className="text-red-500 font-mono text-sm")
+        with PrefabApp() as app:
+            with Column(gap=4, css_class="p-8"):
+                Heading("❌ Dashboard Error")
+                Text(f"Failed to generate dashboard: {str(e)}")
+        return app
 
 
 if __name__ == "__main__":
