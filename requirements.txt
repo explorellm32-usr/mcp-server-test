@@ -1,0 +1,4 @@
+fastmcp
+prefab-ui
+httpx
+beautifulsoup4
