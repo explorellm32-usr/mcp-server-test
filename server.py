@@ -2,7 +2,7 @@ import os
 import json
 import asyncio
 import re
-import httpx
+from curl_cffi.requests import AsyncSession
 from datetime import datetime
 from bs4 import BeautifulSoup
 from fastmcp import FastMCP
@@ -35,12 +35,13 @@ async def fetch_amazon_product(asin: str) -> str:
     """
     url = f"https://www.amazon.in/dp/{asin}"
     try:
-        async with httpx.AsyncClient(headers=HEADERS, follow_redirects=True, timeout=20) as client:
-            # Concurrently fetch the product page and the reviews page
-            product_task = client.get(url)
+        async with AsyncSession(impersonate="chrome", timeout=20) as client:
+            # Fetch sequentially with a delay to avoid triggering bot detection
+            product_resp = await client.get(url)
+            await asyncio.sleep(1.5)  # Pause to mimic human behavior
+            
             reviews_url = f"https://www.amazon.in/product-reviews/{asin}?pageNumber=1"
-            reviews_task = client.get(reviews_url)
-            product_resp, reviews_resp = await asyncio.gather(product_task, reviews_task)
+            reviews_resp = await client.get(reviews_url)
 
         # --- Parse Product Page ---
         soup = BeautifulSoup(product_resp.text, "html.parser")
